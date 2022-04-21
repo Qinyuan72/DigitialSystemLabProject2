@@ -108,26 +108,28 @@ int main(void)
 			ch = UDR0; /*get character sent from PC*/
 			chooseChar(ch, buffer);
 		}
-
-		if (TIMER_report_flag)
+		if (new_input_capture_data_flag)
 		{
-			if (new_timer_data_flag)
+			if (TIMER_report_flag)
 			{
-				sprintf(buffer, "The period of the 555 Timer in microseconds %i", t_period);
-				sendmsg(buffer); /*send first message*/
-				new_timer_data_flag = 0;
-			}
-		}
-		else if (ADC_report_flag)
-		{
-			if (new_adc_data_flag)
-			{
-				if (qcntr == sndcntr)
+				if (new_timer_data_flag)
 				{
-					sprintf(buffer, "This is the ADC value %i", adc_reading);
+					sprintf(buffer, "The period of the 555 Timer in microseconds %i", t_period);
 					sendmsg(buffer); /*send first message*/
+					new_timer_data_flag = 0;
 				}
-				new_adc_data_flag = 0;
+			}
+			else if (ADC_report_flag)
+			{
+				if (new_adc_data_flag)
+				{
+					if (qcntr == sndcntr)
+					{
+						sprintf(buffer, "This is the ADC value %i", adc_reading);
+						sendmsg(buffer); /*send first message*/
+					}
+					new_adc_data_flag = 0;
+				}
 			}
 		}
 		/*
@@ -140,7 +142,6 @@ int main(void)
 				if continuous ADC display is selected, report new ADC voltage to the user on the USART
 				clear the ADC data flag
 			}
-
 		*/
 	}
 	return 1;
@@ -240,14 +241,14 @@ void chooseChar(char ch, char *buffer)
 		break;
 	case 's':
 	case 'S':
-		sprintf(buffer, "OCR2B register: %i", OCR2B);//The current value of the OCR2B register is 
-		sendmsg(buffer); /*send first message*/
+		sprintf(buffer, "OCR2B register: %i", OCR2B); // The current value of the OCR2B register is
+		sendmsg(buffer);							  /*send first message*/
 		break;
 
 	case 't':
 	case 'T':
-		sprintf(buffer, "555 Timer period %ius", t_period);//The period of the 555 Timer in microseconds %ius
-		sendmsg(buffer); /*send first message*/
+		sprintf(buffer, "555 Timer period %ius", t_period); // The period of the 555 Timer in microseconds %ius
+		sendmsg(buffer);									/*send first message*/
 		break;
 
 	case 'l':
@@ -264,8 +265,8 @@ void chooseChar(char ch, char *buffer)
 
 	case 'c':
 	case 'C':
-		sprintf(buffer, "Timer Report Continuously");//Continuously
-		sendmsg(buffer); /*send first message*/
+		sprintf(buffer, "Timer Report Continuously"); // Continuously
+		sendmsg(buffer);							  /*send first message*/
 		TIMER_report_flag = 1;
 		break;
 
@@ -292,8 +293,8 @@ void chooseChar(char ch, char *buffer)
 
 	case 'm':
 	case 'M':
-		sprintf(buffer, "Continuously report the ADC conversion.");//Continuously report the ADC conversion result in mV. You must convert the ADC value to mV.
-		sendmsg(buffer); /*send first message*/
+		sprintf(buffer, "Continuously report the ADC conversion."); // Continuously report the ADC conversion result in mV. You must convert the ADC value to mV.
+		sendmsg(buffer);											/*send first message*/
 		ADC_report_flag = 1;
 		break;
 
