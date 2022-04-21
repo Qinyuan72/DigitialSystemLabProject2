@@ -112,11 +112,15 @@ int main(void)
 		{
 			if (TIMER_report_flag)
 			{
+
 				if (new_timer_data_flag)
 				{
-					sprintf(buffer, "The period of the 555 Timer in microseconds %i", t_period);
-					sendmsg(buffer); /*send first message*/
-					new_timer_data_flag = 0;
+					if (qcntr == sndcntr)
+					{
+						sprintf(buffer, "The period of the 555 Timer in microseconds %i", t_period);
+						sendmsg(buffer); /*send first message*/
+						new_timer_data_flag = 0;
+					}
 				}
 			}
 			else if (ADC_report_flag)
@@ -360,16 +364,18 @@ ISR(USART_TX_vect)
 
 ISR(ADC_vect) /* handles ADC interrupts  */
 {
-	adc_reading = ADC; /* ADC is in Free Running Mode - you don't have to set up anything for the next conversion */
-	adc_reading_signed = (int)adc_reading;
 	if (ADC_select_flag)
 	{
-		ADMUX = (1 << MUX0); /* AVCC selected for VREF, ADC0 as ADC input  */
+		ADMUX = (0 << MUX0)| (0 << MUX1)| (1 << MUX2); /* AVCC selected for VREF, ADC0 as ADC input  */
 	}
 	else
 	{
-		ADMUX = (1 << MUX1);
+		ADMUX = (0 << MUX0)| (1 << MUX1)| (0 << MUX2); // select 2/4 ??Q.
 	}
+
+	adc_reading = ADC; /* ADC is in Free Running Mode - you don't have to set up anything for the next conversion */
+	adc_reading_signed = (int)adc_reading;
+
 	if (ADC > 717)
 	{ // work out the threshold value needed
 		PORTD = PORTD | (1 << PORTD6);
