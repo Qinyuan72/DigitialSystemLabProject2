@@ -17,23 +17,29 @@
 #include <avr/interrupt.h>
 #define DLY_2_ms 61
 #define COUNT_FOR_10ms 10
-volatile int8_t new_adc_data_flag;
+
+volatile int8_t new_adc_data_flag; // ISR take action flag
 volatile int8_t new_input_capture_data_flag;
+volatile int8_t new_timer_data_flag;
+
 unsigned int adc_reading; /* Defined as a global here, because it's shared with main  */
 int adc_reading_signed;
 int t_period;
 int t_period_high;
 int t_period_low;
+
 uint16_t timecount0;
 uint16_t timecount1;
+
 volatile uint8_t servo_flag;
 volatile uint8_t servo_direction_flag;
+
 volatile uint8_t ADC_report_flag;
 volatile uint8_t TIMER_report_flag;
 volatile int8_t ADC_select_flag;
 unsigned char qcntr = 0, sndcntr = 0; /*indexes into the queue*/
-unsigned char queue[100];			  /*character queue*/
-char buffer[100];					  /* similar size to queue */
+unsigned char queue[60];			  /*character queue*/
+char buffer[60];					  /* similar size to queue */
 unsigned int ADC_VCF;				  // ADC_Votalge_Covertion_Factor 4.8828125
 unsigned int ADC_VR;				  // ADC_Votalge_Reading
 
@@ -102,18 +108,21 @@ int main(void)
 			ch = UDR0; /*get character sent from PC*/
 			chooseChar(ch, buffer);
 		}
-		
+
 		if (TIMER_report_flag)
 		{
-			sprintf(buffer, "The period of the 555 Timer in microseconds %i", t_period);
-			sendmsg(buffer); /*send first message*/
+			if (new_timer_data_flag)
+			{
+				sprintf(buffer, "The period of the 555 Timer in microseconds %i", t_period);
+				sendmsg(buffer); /*send first message*/
+				new_timer_data_flag = 0;
+			}
 		}
 		else if (ADC_report_flag)
 		{
 			if (new_adc_data_flag)
 			{
-
-				if (qntr == sndcntr)
+				if (qcntr == sndcntr)
 				{
 					sprintf(buffer, "This is the ADC value %i", adc_reading);
 					sendmsg(buffer); /*send first message*/
@@ -231,31 +240,31 @@ void chooseChar(char ch, char *buffer)
 		break;
 	case 's':
 	case 'S':
-		sprintf(buffer, "The current value of the OCR2B register is %i", OCR2B);
+		sprintf(buffer, "OCR2B register: %i", OCR2B);//The current value of the OCR2B register is 
 		sendmsg(buffer); /*send first message*/
 		break;
 
 	case 't':
 	case 'T':
-		sprintf(buffer, "The period of the 555 Timer in microseconds %ius", t_period);
+		sprintf(buffer, "555 Timer period %ius", t_period);//The period of the 555 Timer in microseconds %ius
 		sendmsg(buffer); /*send first message*/
 		break;
 
 	case 'l':
 	case 'L':
-		sprintf(buffer, " The time taken by the low pulse of the 555 Timer signal in microseconds %ius", t_period_low);
+		sprintf(buffer, "555 Timer period Low pause %ius", t_period_low);
 		sendmsg(buffer); /*send first message*/
 		break;
 
 	case 'h':
 	case 'H':
-		sprintf(buffer, "The time taken by the high pulse of the 555 Timer signal in microseconds %ius", t_period_high);
+		sprintf(buffer, "555 Timer period high pause %ius", t_period_high);
 		sendmsg(buffer); /*send first message*/
 		break;
 
 	case 'c':
 	case 'C':
-		sprintf(buffer, "Continuously report the Timer input period in microseconds.");
+		sprintf(buffer, "Timer Report Continuously");//Continuously
 		sendmsg(buffer); /*send first message*/
 		TIMER_report_flag = 1;
 		break;
@@ -277,13 +286,13 @@ void chooseChar(char ch, char *buffer)
 	case 'V':
 		// adc_reading_signed = (int)adc_reading;
 		ADC_VR = adc_reading_signed * ADC_VCF;
-		sprintf(buffer, "Report the ADC conversion result in mV. You must also the ADC source.%i", ADC_VR);
+		sprintf(buffer, "Report the ADC conversion result in mV. .%i", ADC_VR);
 		sendmsg(buffer); /*send first message*/
 		break;
 
 	case 'm':
 	case 'M':
-		sprintf(buffer, "Continuously report the ADC conversion result in mV. You must convert the ADC value to mV. You must also display the ADC source.");
+		sprintf(buffer, "Continuously report the ADC conversion.");//Continuously report the ADC conversion result in mV. You must convert the ADC value to mV.
 		sendmsg(buffer); /*send first message*/
 		ADC_report_flag = 1;
 		break;
@@ -326,14 +335,14 @@ void chooseChar(char ch, char *buffer)
 	case 'i':
 	case 'I':
 		ADC_select_flag = 1;
-		sprintf(buffer, " Select ADC14, Internal 1.1V BG ref as the ADC input. This means changing the ADMUX register and the change must be done in the ADC ISR.");
+		sprintf(buffer, " Select ADC14, Internal 1.1V BG ref as the ADC input. ");
 		sendmsg(buffer); /*send first message*/
 		break;
 
 	case 'j':
 	case 'J':
 		ADC_select_flag = 0;
-		sprintf(buffer, ": Select ADC2 as the ADC input. This means changing the ADMUX register and the change must be done in the ADC ISR.");
+		sprintf(buffer, ": Select ADC2 as the ADC input. ");
 		sendmsg(buffer); /*send first message*/
 		break;
 	}
