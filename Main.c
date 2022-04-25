@@ -4,14 +4,13 @@
  * Updated: 25/11/2020 11:40:54
  *
  * This program assumes a clock frequency of 16 MHz
- * Baud rate of 9600 used
+ * Baud rate of 19200 used
  * Based on Barnett Example Fig 2-40
  * This version uses sprintf
  *
- * Created: 17/10/2011 01:09:43
- *  Author: Ciaran MacNamee
+ * Created: 25/04/2022 12:25
+ *  Author: Mandisi M. Sibanda(20146817), Quinyuan Liu(20137095)
  */
-
 #include <stdio.h> /* Required for sprintf */
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -64,7 +63,7 @@ void Init_USART(void)
 	UCSR0A = 0x00; /* Not necessary  */
 
 	UCSR0B = (1 << RXEN0) | (1 << TXEN0) | (1 << TXCIE0); /*enable receiver, transmitter and transmit interrupt, 0x58;*/
-	UBRR0 = 103;										  /*baud rate = 9600, USART 2X = 0 so UBRR0 = ((16*10^6)/(16*9600))-1 = 103.167, rounded to 103 */
+	UBRR0 = 51;										  /*baud rate = 9600, USART 2X = 0 so UBRR0 = ((16*10^6)/(16*19200))-1 = 51.08333333, rounded to 51 */
 
 	/* NB: the default state of UCSR0C is 0b00000110; which selects 8 bit, no parity, 1 stop bit */
 	/* Don't be tempted to set it to all zeros - you will select 5 bit data word */
@@ -311,7 +310,7 @@ void chooseChar(char ch, char *buffer)
 
 	case 'w':
 	case 'W':
-		sprintf(buffer, "Toggle the LED bit 4 at 125ms and move the servomotor to its next position");
+		sprintf(buffer, " move the servomotor to its next position");
 		sendmsg(buffer); /*send first message*/
 		servo_flag = 1;
 		OCR2A = 15;
@@ -420,7 +419,7 @@ ISR(TIMER1_CAPT_vect)
 	unsigned long clocks; /* count of clocks in the pulse - not needed outside the
 	ISR, so make it local */
 	end_edge = ICR1;
-	uint32_t Time_Period_Low, Time_Period_High;
+	static uint32_t Time_Period_Low, Time_Period_High;
 	if (TCCR1B & 1 << ICES1)
 	{
 		clocks = ((unsigned long)timecount1 * 65536) + (unsigned long)end_edge - (unsigned long)start_edge;
@@ -442,13 +441,9 @@ ISR(TIMER1_CAPT_vect)
 	new_input_capture_data_flag = 1;
 	start_edge = end_edge; // We're counting rising to rising, so this end = next start
 	// Save its time for next time through here
-	if (Time_Period > 150000)
-	{
+	if (t_period > 150)
 		PORTD = PORTD | (1 << PORTD6);
-	}
 	else
-	{
 		PORTD = PORTD & (~(1 << PORTD6));
-	}
 	new_timer_data_flag = 1;
 }
