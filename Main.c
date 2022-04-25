@@ -329,6 +329,7 @@ void chooseChar(char ch, char *buffer)
 	case 'D':
 		sprintf(buffer, " Report to the user the state (in hex) of PORTD outputs.%x", PORTD);
 		sendmsg(buffer); /*send first message*/
+		
 		break;
 
 	case 'p':
@@ -364,26 +365,22 @@ ISR(USART_TX_vect)
 
 ISR(ADC_vect) /* handles ADC interrupts  */
 {
-	if (ADC_select_flag)
-	{
-		ADMUX = (0 << MUX0)| (0 << MUX1)| (1 << MUX2); /* AVCC selected for VREF, ADC0 as ADC input  */
-	}
-	else
-	{
-		ADMUX = (0 << MUX0)| (1 << MUX1)| (0 << MUX2); // select 2/4 ??Q.
-	}
-
 	adc_reading = ADC; /* ADC is in Free Running Mode - you don't have to set up anything for the next conversion */
 	adc_reading_signed = (int)adc_reading;
-
-	if (ADC > 717)
-	{ // work out the threshold value needed
-		PORTD = PORTD | (1 << PORTD6);
-	}
+	
+	if (ADC_select_flag)
+		ADMUX = ((1 << REFS0) | (0 << ADLAR) |(1<<MUX3)|(1<<MUX2)|(1<<MUX1)|(0<<MUX0));
 	else
-		PORTD = PORTD & (~(1 << PORTD6));
+		ADMUX =  ((1 << REFS0) | (0 << ADLAR) |(0<<MUX3)|(0<<MUX2)|(1<<MUX1)|(0 << MUX0));
+		
+	if (adc_reading > 717)// work out the threshold value needed
+		PORTD = PORTD | (1<<PORTD7);
+	else
+		PORTD = PORTD & (~(1<<PORTD7));
+		
 	new_adc_data_flag = 1;
 }
+
 
 ISR(TIMER0_OVF_vect)
 {
